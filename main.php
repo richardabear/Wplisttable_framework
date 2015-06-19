@@ -5,9 +5,11 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 }
 
 
-class List_name extends WP_List_Table{
+class Techriver_maplists_list extends WP_List_Table{
 	protected $tablename; //Name of table you are going to use refer to contructor function
-	protected per_page;
+	protected $per_page; //Items per page. Set in the constructor function
+	
+	protected $columns; // Columns for the table set in the constructor function
 	
 	
 	  public function __construct() {
@@ -23,7 +25,11 @@ class List_name extends WP_List_Table{
 		  
 		//Settings
 		$this->tablename = $wpdb->prefix . 'techriver_maplists'; //Change this to the table name of your data
-		$this->per_page = 10 //Change this to the number of items per page.
+		$this->per_page = 10; //Change this to the number of items per page.
+		
+		  
+		 $columns = array(
+		 );
 		
  
     }
@@ -58,17 +64,17 @@ class List_name extends WP_List_Table{
 		  );
 	}
 	
-	public static function record_count() {
+	public static function record_count($tablename) {
   		global $wpdb;
  
-  		$sql = "SELECT COUNT(*) FROM {$this->tablename}";
+  		$sql = "SELECT COUNT(*) FROM ".$tablename;
  
   		return $wpdb->get_var( $sql );
 	}
 	
 	
 	public function no_items() {
-  		_e( 'No customers avaliable.', 'sp' );
+  		_e( 'No data avaliable.', 'sp' );
 	}
 	
 	/**
@@ -81,11 +87,11 @@ class List_name extends WP_List_Table{
 	 */
 	public function column_default( $item, $column_name ) {
 		switch ( $column_name ) {
-			case 'address':
+			case 'special':
 			case 'city':
 				return $item[ $column_name ];
 			default:
-				return print_r( $item, true ); //Show the whole array for troubleshooting purposes
+				return $item[ $column_name ]; //Show the default val
 		}
 	}
 
@@ -173,7 +179,7 @@ class List_name extends WP_List_Table{
 	 * Handles data query and filter, sorting, and pagination.
 	 */
 	public function prepare_items() {
-
+		
 		$this->_column_headers = $this->get_column_info();
 
 		/** Process bulk action */
@@ -181,7 +187,7 @@ class List_name extends WP_List_Table{
 
 		$per_page     = $this->per_page;
 		$current_page = $this->get_pagenum();
-		$total_items  = self::record_count();
+		$total_items  = self::record_count($this->tablename);
 
 		$this->set_pagination_args( [
 			'total_items' => $total_items, //WE have to calculate the total number of items
@@ -229,3 +235,7 @@ class List_name extends WP_List_Table{
 		}
 	}
 }
+
+$map_lists_list = new Techriver_maplists_list();
+$map_lists_list->prepare_items();
+$map_lists_list->display();
