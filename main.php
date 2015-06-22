@@ -1,5 +1,16 @@
 
-<?php
+<div class="wrap">
+	<h2 style="float:left; clear:both;">
+		Map List Name
+	</h2>
+	<a href="<?php echo admin_url('admin.php?page=tcmaplists_admin_add');?>" style="padding:5px 10px;background-color:#fafafa;float:left;text-decoration:none;margin-top:10px;">Add new</a>
+	<div style="clear:both;">
+		
+	</div>
+	<hr/>
+	<form method="POST">
+
+	<?php // Show table
 if ( ! class_exists( 'WP_List_Table' ) ) {
     require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 }
@@ -23,13 +34,16 @@ class Techriver_maplists_list extends WP_List_Table{
 		  
 		//Settings
 		$this->tablename = $wpdb->prefix . 'techriver_maplists'; //Change this to the table name of your data
-		$this->per_page = 1; //Change this to the number of items per page.
+		$this->per_page = 15; //Change this to the number of items per page.
 		
 		  
-		 $this->columns = array(
-			  'cb'      => '<input type="checkbox" />',
+		 $this->columns = array( // Columns for the table please use the correct identifier for the key. use the exact same name as what is stored on database.
+			  'cb'      => '<input type="checkbox" />', // Leave this in for bulk functionality
 			 'id' => 'ID',
-			 'name' => 'Name'
+			 'name' => 'Name',
+			 'location' => 'Location',
+			 'email' => 'Email',
+			 
 		 );
 		
  
@@ -50,11 +64,11 @@ class Techriver_maplists_list extends WP_List_Table{
 		 return $result;
 	}
 	
-	public static function delete_data( $id ) {
+	public static function delete_data( $id, $tablename ) {
 		  global $wpdb;
 		  $wpdb->delete(
-		    "{$this->tablename}",
-		    [ 'ID' => $id ],
+		    "{$tablename}",
+		    [ 'id' => $id ],
 		    [ '%d' ]
 		  );
 	}
@@ -116,6 +130,17 @@ class Techriver_maplists_list extends WP_List_Table{
 		];
 		return $title . $this->row_actions( $actions );
 	}
+	
+	function column_id( $item ) {
+		$delete_nonce = wp_create_nonce( 'sp_delete_customer');
+		$modify_nonce = wp_create_nonce( 'sp_modify_customer' );
+		$title = '<strong>' . $item['id'] . '</strong>';
+		$actions = [
+			'delete' => sprintf( '<a href="?page=%s&action=%s&id=%s&_wpnonce=%s">Delete</a>', esc_attr( $_REQUEST['page'] ), 'delete', absint( $item['id'] ), $delete_nonce ),
+			'modify' => sprintf( '<a href="?page=%s&action=%s&id=%s&_wpnonce=%s">Modify</a>',esc_attr( $_REQUEST['page'] ), 'modify', absint( $item['id'] ), $modify_nonce )
+		];
+		return $title . $this->row_actions( $actions );
+	}
 	/**
 	 *  Associative array of columns
 	 *
@@ -133,6 +158,7 @@ class Techriver_maplists_list extends WP_List_Table{
 	public function get_sortable_columns() {
 		$sortable_columns = array(
 			'name' => array( 'name', true ),
+			'id' => array ( 'id', true)
 		);
 		return $sortable_columns;
 	}
@@ -166,21 +192,10 @@ class Techriver_maplists_list extends WP_List_Table{
 			'per_page'    => $per_page //WE have to determine how many items to show on a page
 		] );
 		$this->items = $this->get_data( $per_page, $current_page );
+		$this->process_bulk_action();
 	}
 	public function process_bulk_action() {
-		//Detect when a bulk action is being triggered...
-		if ( 'delete' === $this->current_action() ) {
-			// In our file that handles the request, verify the nonce.
-			$nonce = esc_attr( $_REQUEST['_wpnonce'] );
-			if ( ! wp_verify_nonce( $nonce, 'sp_delete_customer' ) ) {
-				die( 'Go get a life script kiddies' );
-			}
-			else {
-				self::delete_customer( absint( $_GET['customer'] ) );
-				wp_redirect( esc_url( add_query_arg() ) );
-				exit;
-			}
-		}
+		
 		// If the delete bulk action is triggered
 		if ( ( isset( $_POST['action'] ) && $_POST['action'] == 'bulk-delete' )
 		     || ( isset( $_POST['action2'] ) && $_POST['action2'] == 'bulk-delete' )
@@ -188,9 +203,10 @@ class Techriver_maplists_list extends WP_List_Table{
 			$delete_ids = esc_sql( $_POST['bulk-delete'] );
 			// loop over the array of record IDs and delete them
 			foreach ( $delete_ids as $id ) {
-				self::delete_customer( $id );
+				$this->delete_data($id,$this->tablename);
 			}
-			wp_redirect( esc_url( add_query_arg() ) );
+			//wp_redirect( admin_url('admin.php?page=tcmaplists_admin')  );
+			echo '<meta http-equiv="refresh" content="0; url='.admin_url('admin.php?page=tcmaplists_admin').'">';
 			exit;
 		}
 	}
@@ -198,3 +214,7 @@ class Techriver_maplists_list extends WP_List_Table{
 $map_lists_list = new Techriver_maplists_list();
 $map_lists_list->prepare_items();
 $map_lists_list->display();
+?> <!--END OF MAP List Table PHP-->
+				
+	</form>
+</div>
